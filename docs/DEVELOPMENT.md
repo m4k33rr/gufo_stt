@@ -174,7 +174,7 @@ hosted selection is described in [testing](TESTING.md).
 ## Related documents
 
 [CLI](CLI.md), [server](SERVER.md), [testing](TESTING.md),
-[releasing](RELEASING.md),
+[releasing](RELEASING.md), [dictation design](DICTATION.md),
 [performance](PERFORMANCE.md), [benchmarking](BENCHMARKS.md) and
 [models](models/README.md).
 
