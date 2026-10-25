@@ -245,6 +245,7 @@ endif()
 add_library(gufo_diagnostics STATIC
   src/core/diagnostics/gpu_queues.cpp
   src/core/diagnostics/linux_sysfs.cpp
+  src/core/diagnostics/npu.cpp
   src/core/diagnostics/system_inventory.cpp
   src/core/diagnostics/compatibility.cpp
   src/core/diagnostics/fingerprint.cpp
@@ -867,6 +868,11 @@ if (BUILD_TESTING)
   target_link_libraries(gpu_queues_test PRIVATE gufo_diagnostics gufo_platform)
   add_test(NAME gpu_queues_test COMMAND gpu_queues_test)
   set_tests_properties(gpu_queues_test PROPERTIES LABELS "cpu;diagnostics;serving")
+
+  add_executable(npu_test tests/diagnostics/npu_test.cpp)
+  target_link_libraries(npu_test PRIVATE gufo_diagnostics gufo_platform)
+  add_test(NAME npu_test COMMAND npu_test)
+  set_tests_properties(npu_test PROPERTIES LABELS "cpu;diagnostics")
 
   add_executable(bandwidth_test tests/diagnostics/bandwidth_test.cpp)
   target_compile_definitions(bandwidth_test PRIVATE TEST_FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/diagnostics")

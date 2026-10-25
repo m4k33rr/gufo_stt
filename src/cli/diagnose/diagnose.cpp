@@ -16,6 +16,7 @@
 #include "src/core/diagnostics/compatibility.h"
 #include "src/core/diagnostics/fingerprint.h"
 #include "src/core/diagnostics/linux_sysfs.h"
+#include "src/core/diagnostics/npu.h"
 #include "src/core/diagnostics/system_inventory.h"
 
 #if defined(ENGINE_ENABLE_HIP)
@@ -56,7 +57,7 @@ void PrintDiagnoseHelp(std::string_view program_name) {
       << "  --output <path>              Write command output to specified "
          "file\n"
       << "  --section <name>             Diagnostic section to run: all, "
-         "inventory, platform, gpu\n"
+         "inventory, platform, gpu, npu\n"
       << "  -h, --help                   Print help information\n";
 }
 
@@ -192,6 +193,40 @@ diagnostics::DiagnosticReport CollectDiagnostics(
     report.AddCheck(std::move(check));
   }
 
+  // 5. NPU Check (XDNA via the kernel accel subsystem). Informational: the
+  // NPU is optional, so an absent device never fails the report.
+  if (section == "all" || section == "npu") {
+    diagnostics::DiagnosticCheck check;
+    check.name = "npu";
+    const auto npus = diagnostics::QueryNpuDevices();
+    if (npus.empty()) {
+      check.status = diagnostics::DiagnosticStatus::kWarn;
+      check.message =
+          "No NPU found in /sys/class/accel (is the amdxdna driver loaded?)";
+      check.details["deviceCount"] = "0";
+    } else {
+      const auto& npu = npus.front();
+      check.details["deviceCount"] = std::to_string(npus.size());
+      check.details["name"] = npu.name;
+      check.details["driver"] = npu.driver;
+      check.details["pciId"] = npu.pci_id;
+      check.details["pciSlot"] = npu.pci_slot;
+      check.details["node"] = npu.node_path;
+      if (!npu.node_exists) {
+        check.status = diagnostics::DiagnosticStatus::kWarn;
+        check.message = "NPU present but " + npu.node_path + " is missing";
+      } else if (!npu.node_accessible) {
+        check.status = diagnostics::DiagnosticStatus::kWarn;
+        check.message = "NPU present but " + npu.node_path +
+                        " is not accessible (check group and permissions)";
+      } else {
+        check.status = diagnostics::DiagnosticStatus::kPass;
+        check.message = "Detected NPU " + npu.name + " (" + npu.driver + ")";
+      }
+    }
+    report.AddCheck(std::move(check));
+  }
+
   return report;
 }
 
@@ -324,7 +359,7 @@ int RunDiagnose(std::span<const char* const> args) {
   }
 
   if (section != "all" && section != "inventory" && section != "platform" &&
-      section != "gpu") {
+      section != "gpu" && section != "npu") {
     std::cerr << "Error: unknown diagnostic section '" << section << "'\n";
     return 2;
   }

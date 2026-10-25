@@ -281,6 +281,7 @@ gufo serve llm --help
 ### Diagnose
 
 Gufo can self detect if everything is correctly configured to be able to run, such as drivers, groups, permissions, etc.
+`gufo diagnose --section npu` reports the XDNA NPU (`/sys/class/accel`, `amdxdna` driver and `/dev/accel/accel*` access).
 
 ### Benchmarks and Evaluations
 
